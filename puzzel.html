@@ -453,9 +453,21 @@ const themes = {
         emojis: ["🧋", "🏮", "🛵", "🏔️"]
     }
 };
+// --- Language Initialization ---
+function getLangFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang');
+    // Check if the language from URL is valid
+    if (lang && i18n.hasOwnProperty(lang)) {
+        return lang;
+    }
+    return 'nl'; // Default language
+}
+
+const initialLang = getLangFromURL();
 
 const DEFAULT_CONF = {
-    lang: 'nl',
+    lang: initialLang,
     time: 30,
     effects: { puzzle: true, cover: true, swirl: true, pixel: true },
     files: []

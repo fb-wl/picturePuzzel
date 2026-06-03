@@ -12,12 +12,13 @@ A fun, interactive, and fully client-side image guessing quiz built with HTML5 C
   * 🌀 **Swirl:** A heavily twisted image untangling itself.
   * 👾 **Pixel:** A highly pixelated image sharpening up.
 * **Multilingual & Themed UI:** Switch between **Dutch**, **German**, **English**, and **Traditional Chinese**. The application instantly adapts its UI colors, flags, background emojis, and countdown animations (Bicycle 🚴, Racecar 🏎️, London Bus 🚌, Rocket 🚀) to match the chosen language.
+* **URL Parameters:** You can pre-select the default language using the `?lang=` parameter in the URL (e.g., `puzzel.html?lang=de`). The default is Dutch (`nl`).
 * **Interactive Gameplay:** Click the image to pause the countdown. Click "Reveal" to skip the timer and solve the image immediately.
 
 ## 🚀 How to Play
 
 1. Clone or download this repository.
-2. Open the `quiz.html` file in any modern web browser (Chrome, Firefox, Edge, Safari).
+2. Open the `puzzel.html` file in any modern web browser (Chrome, Firefox, Edge, Safari).
 3. Click the **⚙️ (Gear icon)** in the bottom left corner to open the configuration menu.
 4. Choose your preferred language, time limit, and active effects.
 5. Click **"Choose files"** (or the respective translation) and select the image files from your computer that you want to play with.
