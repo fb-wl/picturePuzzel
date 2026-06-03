@@ -2,6 +2,8 @@
 
 A fun, interactive, and fully client-side image guessing quiz built with HTML5 Canvas and Vanilla JavaScript. 
 
+![Screenshot of the game in Dutch language mode](pics/sample.png)
+
 ## ✨ Features
 
 * **Zero Setup / 100% Client-Side:** No backend, server, or database required. Just open the HTML file in your browser.
