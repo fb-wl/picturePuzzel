@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wat zie je hier?</title>
+    <style>
+        :root {
+            /* Standard NL Theme Variables */
+            --bg-color: #FF9B00;
+            --border-primary: #AE1C28;
+            --border-secondary: #1E429F;
+            --h1-bg: #FFFFFF;
+            --h1-color: #1E429F;
+            --h1-border: #FF9B00;
+            --h1-shadow: #AE1C28;
+            --btn-bg: #1E429F;
+            --btn-hover: #2654C2;
+            --btn-shadow: #0D2B70;
+            --progress-start: #FF9B00;
+            --progress-end: #AE1C28;
+        }
+
+        body {
+            font-family: 'Verdana', sans-serif;
+            text-align: center;
+            background-color: var(--bg-color);
+            background-image: none; /* Wird via JS gesetzt */
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.5s;
+        }
+
+        h1 {
+            color: var(--h1-color);
+            font-size: 3.2em;
+            font-weight: 900;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            display: inline-block;
+            background: var(--h1-bg);
+            padding: 10px 40px;
+            border-radius: 50px;
+            border: 6px solid var(--h1-border);
+            box-shadow: 0 8px 0 var(--h1-shadow), 0 15px 20px rgba(0,0,0,0.3);
+            transition: all 0.5s;
+        }
+        .emoji-icon {
+            font-size: 1.2em;
+            vertical-align: text-bottom;
+        }
+        .svg-flag {
+            width: 1.2em;
+            height: 0.8em;
+            vertical-align: middle;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin: 0 10px;
+        }
+
+        .main-wrapper {
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        #game-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            border-bottom: 8px solid var(--border-primary);
+            border-top: 8px solid var(--border-secondary);
+            transition: all 0.5s;
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 20px;
+        }
+
+        #canvas-container {
+            position: relative;
+            cursor: pointer;
+            border: 5px solid #333;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+
+        #pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            color: rgba(255, 255, 255, 0.9);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #progress-container {
+            width: 50px;
+            background: #eee;
+            border: 4px solid var(--border-secondary);
+            border-radius: 25px;
+            position: relative;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: border-color 0.5s;
+        }
+        #progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to bottom, var(--progress-start), var(--progress-end));
+            border-radius: 20px 20px 0 0;
+            z-index: 1;
+        }
+        #finish-line-wrapper {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            border-top: 3px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+        }
+        #finish-line {
+            font-size: 24px;
+        }
+        #cyclist {
+            position: absolute;
+            top: 0%;
+            font-size: 30px;
+            z-index: 3;
+            transform: translateX(2px);
+            transition: top 0.1s linear;
+        }
+
+        .controls { margin-bottom: 15px; }
+        button {
+            padding: 12px 25px;
+            font-size: 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: var(--btn-bg);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 0 var(--btn-shadow);
+            transition: all 0.1s;
+        }
+        button:hover { background: var(--btn-hover); }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+
+        /* Konfiguration als Floating Action Button in der Ecke */
+        details#config {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            text-align: left;
+        }
+
+        details#config summary {
+            font-size: 35px;
+            cursor: pointer;
+            outline: none;
+            list-style: none;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.95);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 3px solid var(--border-secondary);
+            transition: transform 0.2s, border-color 0.5s;
+        }
+        details#config summary:hover {
+            transform: scale(1.1);
+        }
+
+        details#config summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details#config summary::before {
+            content: '⚙️';
+            display: inline-block;
+            transition: transform 0.4s ease-in-out;
+            line-height: 1;
+        }
+        details#config[open] summary::before {
+            transform: rotate(180deg);
+        }
+
+        .config-content {
+            position: absolute;
+            bottom: 75px;
+            left: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            border-left: 5px solid var(--progress-start);
+            width: 340px;
+            max-width: 80vw;
+            max-height: 70vh;
+            overflow-y: auto;
+            transition: border-left-color 0.5s;
+        }
+
+        .config-row { margin-bottom: 15px; }
+        .config-row label.title {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--border-secondary);
+            transition: color 0.5s;
+        }
+        .config-row input[type="number"], .config-row select {
+            padding: 8px;
+            font-size: 14px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .config-row input[type="file"] {
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .checkbox-group {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .checkbox-group label {
+            display: block;
+            margin-bottom: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .config-actions {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .config-actions button {
+            font-size: 14px;
+            padding: 8px 15px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+        }
+        #config-ok { background: #4CAF50; }
+        #config-ok:hover { background: #45a049; }
+
+        #config-cancel { background: #777; }
+        #config-cancel:hover { background: #666; }
+
+        #config-default { background: #1E429F; }
+        #config-default:hover { background: #2654C2; }
+    </style>
+</head>
+<body>
+
+<h1 id="main-title" data-i18n="title">
+    <svg class="svg-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 6"><rect width="9" height="6" fill="#21468B"/><rect width="9" height="4" fill="#FFF"/><rect width="9" height="2" fill="#AE1C28"/></svg>
+    Wat zie je hier?
+    <span class="emoji-icon">🧀</span>
+</h1>
+
+<div class="main-wrapper">
+    <div id="game-container">
+
+        <div class="controls">
+            <button id="main-btn" data-i18n="btnBegin">Begin</button>
+        </div>
+
+        <div class="game-area">
+            <div id="canvas-container" title="Klik om te pauzeren / door te gaan">
+                <canvas id="quiz-canvas" width="600" height="400"></canvas>
+                <div id="pause-overlay">▶</div>
+            </div>
+
+            <!-- Vertikaler Fortschrittsbalken -->
+            <div id="progress-container">
+                <div id="progress-fill"></div>
+                <div id="cyclist">🚴</div>
+                <!-- Ziellinie -->
+                <div id="finish-line-wrapper">
+                    <div id="finish-line">🏁</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Konfiguration links in der unteren Ecke -->
+<details id="config" title="Configuratie">
+    <summary></summary>
+    <div class="config-content">
+        <div class="config-row">
+            <label class="title" for="config-lang" data-i18n="cfgLang">Taal / Language:</label>
+            <select id="config-lang">
+                <option value="nl">Nederlands 🇳🇱</option>
+                <option value="de">Deutsch 🇩🇪</option>
+                <option value="en">English 🇬🇧</option>
+                <option value="tw">繁體中文 🇹🇼</option>
+            </select>
+        </div>
+        <div class="config-row">
+            <label class="title" for="config-time" data-i18n="cfgTime">Tijd per afbeelding:</label>
+            <input type="number" id="config-time" min="5" max="120">
+        </div>
+        <div class="config-row">
+            <label class="title" for="config-files" data-i18n="cfgFiles">Kies bestanden:</label>
+            <!-- Dateiauswahldialog -->
+            <input type="file" id="config-files" multiple accept="image/*">
+            <div id="selected-files-info" style="font-size: 12px; margin-top: 5px; color: #555;"></div>
+        </div>
+        <div class="config-row">
+            <label class="title" data-i18n="cfgEffects">Effecten:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="effect-puzzle"> <span data-i18n="chkPuzzle">Puzzel</span></label>
+                <label><input type="checkbox" id="effect-cover"> <span data-i18n="chkCover">Bedekt</span></label>
+                <label><input type="checkbox" id="effect-swirl"> <span data-i18n="chkSwirl">Werveling</span></label>
+                <label><input type="checkbox" id="effect-pixel"> <span data-i18n="chkPixel">Pixel</span></label>
+            </div>
+        </div>
+        <div class="config-actions">
+            <button id="config-default" data-i18n="btnDefault">Standaard</button>
+            <div style="flex-grow: 1;"></div>
+            <button id="config-cancel" data-i18n="btnCancel">Annuleren</button>
+            <button id="config-ok" data-i18n="btnOk">OK</button>
+        </div>
+    </div>
+</details>
+
+<script>
+// --- SVGs für Flags ---
+const flagNL = `<svg class="svg-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 6"><rect width="9" height="6" fill="#21468B"/><rect width="9" height="4" fill="#FFF"/><rect width="9" height="2" fill="#AE1C28"/></svg>`;
+const flagDE = `<svg class="svg-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 3"><rect width="5" height="3" fill="#FFCE00"/><rect width="5" height="2" fill="#DD0000"/><rect width="5" height="1" fill="#000000"/></svg>`;
+const flagEN = `<svg class="svg-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"><clipPath id="t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg>`;
+const flagTW = `<svg class="svg-flag" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 8"><rect width="12" height="8" fill="#FE0000"/><rect width="6" height="4" fill="#000095"/><path d="M3,0.5 L3.5,1.5 L4.5,1.5 L3.8,2.2 L4.2,3.2 L3,2.8 L1.8,3.2 L2.2,2.2 L1.5,1.5 L2.5,1.5 Z" fill="#FFF"/><circle cx="3" cy="2" r="0.7" fill="#000095"/><circle cx="3" cy="2" r="0.5" fill="#FFF"/></svg>`;
+
+// --- i18n Dictionary ---
+const i18n = {
+    nl: {
+        title: `${flagNL} Wat zie je hier? <span class='emoji-icon'>🧀</span>`,
+        btnBegin: "Begin", btnResolve: "Oplossen", btnNext: "Volgende afbeelding",
+        cfgLang: "Taal / Language:", cfgTime: "Tijd per afbeelding:",
+        cfgFiles: "Kies bestanden:", localFilesSelected: "bestanden geselecteerd",
+        cfgEffects: "Effecten:",
+        chkPuzzle: "Puzzel", chkCover: "Bedekt", chkSwirl: "Werveling", chkPixel: "Pixel",
+        btnDefault: "Standaard", btnCancel: "Annuleren", btnOk: "OK",
+        errImages: "Kies bestanden in de configuratie!", errLoad: "Afbeeldingsfout"
+    },
+    de: {
+        title: `${flagDE} Was siehst du hier? <span class='emoji-icon'>🍺</span>`,
+        btnBegin: "Start", btnResolve: "Auflösen", btnNext: "Nächstes Bild",
+        cfgLang: "Sprache / Language:", cfgTime: "Zeit pro Bild:",
+        cfgFiles: "Dateien wählen:", localFilesSelected: "Dateien ausgewählt",
+        cfgEffects: "Effekte:",
+        chkPuzzle: "Puzzle", chkCover: "Verdeckt", chkSwirl: "Wirbel", chkPixel: "Pixel",
+        btnDefault: "Standard", btnCancel: "Abbrechen", btnOk: "OK",
+        errImages: "Bitte wähle Bilder in der Konfiguration aus!", errLoad: "Bildfehler"
+    },
+    en: {
+        title: `${flagEN} What do you see? <span class='emoji-icon'>☕</span>`,
+        btnBegin: "Start", btnResolve: "Reveal", btnNext: "Next image",
+        cfgLang: "Language:", cfgTime: "Time per image:",
+        cfgFiles: "Choose files:", localFilesSelected: "files selected",
+        cfgEffects: "Effects:",
+        chkPuzzle: "Puzzle", chkCover: "Covered", chkSwirl: "Swirl", chkPixel: "Pixel",
+        btnDefault: "Default", btnCancel: "Cancel", btnOk: "OK",
+        errImages: "Please select files in the configuration!", errLoad: "Image error"
+    },
+    tw: {
+        title: `${flagTW} 你看到了什麼？ <span class='emoji-icon'>🧋</span>`,
+        btnBegin: "開始", btnResolve: "解答", btnNext: "下一張圖片",
+        cfgLang: "語言 (Language):", cfgTime: "每張圖片時間:",
+        cfgFiles: "選擇檔案:", localFilesSelected: "個檔案已選擇",
+        cfgEffects: "特效:",
+        chkPuzzle: "拼圖", chkCover: "遮罩", chkSwirl: "漩渦", chkPixel: "像素",
+        btnDefault: "預設", btnCancel: "取消", btnOk: "確定",
+        errImages: "請在設定中選擇檔案！", errLoad: "圖片載入錯誤"
+    }
+};
+
+// --- Theme Dictionary ---
+const themes = {
+    nl: {
+        '--bg-color': '#FF9B00', '--border-primary': '#AE1C28', '--border-secondary': '#1E429F',
+        '--h1-bg': '#FFFFFF', '--h1-color': '#1E429F', '--h1-border': '#FF9B00', '--h1-shadow': '#AE1C28',
+        '--btn-bg': '#1E429F', '--btn-hover': '#2654C2', '--btn-shadow': '#0D2B70',
+        '--progress-start': '#FF9B00', '--progress-end': '#AE1C28',
+        vehicle: "🚴",
+        emojis: ["🌷", "🧀", "🚲", "🐄"]
+    },
+    de: {
+        '--bg-color': '#D4D4D4', '--border-primary': '#DD0000', '--border-secondary': '#000000',
+        '--h1-bg': '#FFCE00', '--h1-color': '#000000', '--h1-border': '#DD0000', '--h1-shadow': '#000000',
+        '--btn-bg': '#000000', '--btn-hover': '#333333', '--btn-shadow': '#000000',
+        '--progress-start': '#FFCE00', '--progress-end': '#DD0000',
+        vehicle: "🏎️",
+        emojis: ["🥨", "🍺", "🏰", "🌭"]
+    },
+    en: {
+        '--bg-color': '#7593C9', '--border-primary': '#CF142B', '--border-secondary': '#00247D',
+        '--h1-bg': '#FFFFFF', '--h1-color': '#00247D', '--h1-border': '#CF142B', '--h1-shadow': '#000000',
+        '--btn-bg': '#CF142B', '--btn-hover': '#E02030', '--btn-shadow': '#8A0C1A',
+        '--progress-start': '#FFFFFF', '--progress-end': '#CF142B',
+        vehicle: "🚌",
+        emojis: ["☕", "🚌", "👑", "🌧️"]
+    },
+    tw: {
+        '--bg-color': '#89CFF0', '--border-primary': '#FE0000', '--border-secondary': '#000095',
+        '--h1-bg': '#FFFFFF', '--h1-color': '#000095', '--h1-border': '#FE0000', '--h1-shadow': '#000050',
+        '--btn-bg': '#000095', '--btn-hover': '#1A1AA6', '--btn-shadow': '#000050',
+        '--progress-start': '#FFFFFF', '--progress-end': '#FE0000',
+        vehicle: "🚀",
+        emojis: ["🧋", "🏮", "🛵", "🏔️"]
+    }
+};
+
+const DEFAULT_CONF = {
+    lang: 'nl',
+    time: 30,
+    effects: { puzzle: true, cover: true, swirl: true, pixel: true },
+    files: []
+};
+
+let activeConf = JSON.parse(JSON.stringify(DEFAULT_CONF));
+activeConf.files = [];
+
+const canvas = document.getElementById('quiz-canvas');
+const ctx = canvas.getContext('2d');
+const mainBtn = document.getElementById('main-btn');
+const canvasContainer = document.getElementById('canvas-container');
+const pauseOverlay = document.getElementById('pause-overlay');
+
+const configDetails = document.getElementById('config');
+const configLangInput = document.getElementById('config-lang');
+const configTimeInput = document.getElementById('config-time');
+const configFilesInput = document.getElementById('config-files');
+const selectedFilesInfo = document.getElementById('selected-files-info');
+
+const cbPuzzle = document.getElementById('effect-puzzle');
+const cbCover = document.getElementById('effect-cover');
+const cbSwirl = document.getElementById('effect-swirl');
+const cbPixel = document.getElementById('effect-pixel');
+
+const btnOk = document.getElementById('config-ok');
+const btnCancel = document.getElementById('config-cancel');
+const btnDefault = document.getElementById('config-default');
+
+const cyclist = document.getElementById('cyclist');
+const progressFill = document.getElementById('progress-fill');
+
+let images = [];
+let currentImageIndex = -1;
+let currentImage = null;
+let effects = [];
+let currentEffectIndex = -1;
+
+let gameState = 'START';
+let isPaused = false;
+let startTime = 0;
+let pausedTime = 0;
+let totalTime = 30000;
+let animationFrame = null;
+let progress = 0;
+let puzzlePieces = [];
+let coverBlocks = [];
+let scaledImageCanvas = null;
+
+function applyThemeAndLang(langCode) {
+    document.documentElement.lang = langCode;
+    const langDict = i18n[langCode];
+    document.title = langDict.title.replace(/<[^>]*>?/gm, ''); // Title ohne HTML-Tags
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (langDict[key]) el.innerHTML = langDict[key];
+    });
+
+    updateMainBtnText(langCode);
+    updateSelectedFilesInfo(langCode);
+
+    const theme = themes[langCode];
+    for (let key in theme) {
+        if (key.startsWith('--')) {
+            document.documentElement.style.setProperty(key, theme[key]);
+        }
+    }
+
+    cyclist.textContent = theme.vehicle;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.15"><text x="20" y="50" font-size="40">${theme.emojis[0]}</text><text x="120" y="100" font-size="40">${theme.emojis[1]}</text><text x="40" y="160" font-size="40">${theme.emojis[2]}</text><text x="140" y="180" font-size="30">${theme.emojis[3]}</text></svg>`;
+    document.body.style.backgroundImage = `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}')`;
+}
+
+function updateMainBtnText(langCode = activeConf.lang) {
+    if (gameState === 'START') mainBtn.textContent = i18n[langCode].btnBegin;
+    else if (gameState === 'PLAYING') mainBtn.textContent = i18n[langCode].btnResolve;
+    else if (gameState === 'FINISHED') mainBtn.textContent = i18n[langCode].btnNext;
+}
+
+function updateSelectedFilesInfo(langCode = activeConf.lang) {
+    const fileCount = configFilesInput.files.length > 0 ? configFilesInput.files.length : (activeConf.files ? activeConf.files.length : 0);
+    if (fileCount > 0) {
+        if (langCode === 'tw') {
+            selectedFilesInfo.textContent = `${fileCount} ${i18n[langCode].localFilesSelected}`;
+        } else {
+            selectedFilesInfo.textContent = `${fileCount} ${i18n[langCode].localFilesSelected}`;
+        }
+    } else {
+        selectedFilesInfo.textContent = "";
+    }
+}
+
+function syncUIToState(stateObj) {
+    configLangInput.value = stateObj.lang;
+    configTimeInput.value = stateObj.time;
+
+    // Clear the file input in UI visually
+    configFilesInput.value = '';
+    updateSelectedFilesInfo(stateObj.lang);
+
+    cbPuzzle.checked = stateObj.effects.puzzle;
+    cbCover.checked = stateObj.effects.cover;
+    cbSwirl.checked = stateObj.effects.swirl;
+    cbPixel.checked = stateObj.effects.pixel;
+
+    applyThemeAndLang(stateObj.lang);
+}
+
+configFilesInput.addEventListener('change', () => {
+    updateSelectedFilesInfo(configLangInput.value);
+});
+
+function saveStateFromUI() {
+    activeConf.lang = configLangInput.value;
+    activeConf.time = parseInt(configTimeInput.value) || 30;
+
+    if (configFilesInput.files.length > 0) {
+        activeConf.files = Array.from(configFilesInput.files);
+    }
+
+    activeConf.effects.puzzle = cbPuzzle.checked;
+    activeConf.effects.cover = cbCover.checked;
+    activeConf.effects.swirl = cbSwirl.checked;
+    activeConf.effects.pixel = cbPixel.checked;
+    applyThemeAndLang(activeConf.lang);
+}
+
+configLangInput.addEventListener('change', (e) => {
+    applyThemeAndLang(e.target.value);
+});
+
+btnOk.addEventListener('click', () => {
+    saveStateFromUI();
+    configDetails.removeAttribute('open');
+});
+
+btnCancel.addEventListener('click', () => {
+    syncUIToState(activeConf); // Revert UI & Theme to active saved state
+    configDetails.removeAttribute('open');
+});
+
+btnDefault.addEventListener('click', () => {
+    syncUIToState(DEFAULT_CONF); // Preview defaults in UI immediately
+});
+
+syncUIToState(activeConf); // Initial Load
+
+function loadImages() {
+    if (activeConf.files && activeConf.files.length > 0) {
+        return activeConf.files.map(f => URL.createObjectURL(f));
+    }
+    return [];
+}
+
+function getActiveEffects() {
+    let active = [];
+    if (activeConf.effects.puzzle) active.push('puzzle');
+    if (activeConf.effects.cover) active.push('cover');
+    if (activeConf.effects.swirl) active.push('swirl');
+    if (activeConf.effects.pixel) active.push('pixel');
+    return active.length > 0 ? active : ['puzzle', 'cover', 'swirl', 'pixel'];
+}
+
+mainBtn.addEventListener('click', () => {
+    if (gameState === 'START') {
+        images = loadImages();
+        if (images.length === 0) {
+            alert(i18n[activeConf.lang].errImages);
+            return;
+        }
+        nextImage();
+    } else if (gameState === 'PLAYING') {
+        resolveImage();
+    } else if (gameState === 'FINISHED') {
+        nextImage();
+    }
+});
+
+canvasContainer.addEventListener('click', () => {
+    if (gameState !== 'PLAYING') return;
+    isPaused = !isPaused;
+    if (isPaused) {
+        pauseOverlay.style.display = 'flex';
+        cancelAnimationFrame(animationFrame);
+    } else {
+        pauseOverlay.style.display = 'none';
+        startTime = performance.now() - pausedTime;
+        animate(performance.now());
+    }
+});
+
+function updateProgressBar(p) {
+    // Füllt sich nur bis zur Ziellinie (Höhe des Containers abzüglich der 40px Ziellinie)
+    progressFill.style.height = `calc(${p} * (100% - 40px))`;
+    // Das Fahrzeug stoppt genau mit dem Hinterrad auf der Ziellinie
+    cyclist.style.top = `calc(${p} * (100% - 70px))`;
+}
+
+function nextImage() {
+    if (images.length === 0) images = loadImages();
+    effects = getActiveEffects();
+
+    currentImageIndex = (currentImageIndex + 1) % images.length;
+    currentEffectIndex = (currentEffectIndex + 1) % effects.length;
+
+    totalTime = activeConf.time * 1000;
+    progress = 0;
+    pausedTime = 0;
+
+    updateProgressBar(0);
+    pauseOverlay.style.display = 'none';
+
+    const imgSrc = images[currentImageIndex];
+    currentImage = new Image();
+    currentImage.onload = () => {
+        startRound();
+    };
+    currentImage.onerror = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff5555';
+        ctx.font = '20px Arial';
+        ctx.fillText(i18n[activeConf.lang].errLoad, 20, 50);
+        gameState = 'FINISHED';
+        updateMainBtnText();
+    };
+    currentImage.src = imgSrc;
+}
+
+function startRound() {
+    gameState = 'PLAYING';
+    isPaused = false;
+    updateMainBtnText();
+    pauseOverlay.style.display = 'none';
+
+    const maxW = 600;
+    const maxH = 400;
+    const ratio = Math.min(maxW / currentImage.width, maxH / currentImage.height);
+    canvas.width = currentImage.width * ratio;
+    canvas.height = currentImage.height * ratio;
+
+    scaledImageCanvas = document.createElement('canvas');
+    scaledImageCanvas.width = canvas.width;
+    scaledImageCanvas.height = canvas.height;
+    const offCtx = scaledImageCanvas.getContext('2d');
+    offCtx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+
+    initEffect();
+
+    startTime = performance.now();
+    cancelAnimationFrame(animationFrame);
+    animate(startTime);
+}
+
+function resolveImage() {
+    progress = 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(scaledImageCanvas, 0, 0);
+    endRound();
+}
+
+function endRound() {
+    gameState = 'FINISHED';
+    isPaused = false;
+    pauseOverlay.style.display = 'none';
+    cancelAnimationFrame(animationFrame);
+    updateProgressBar(1);
+    updateMainBtnText();
+}
+
+function animate(now) {
+    if (gameState !== 'PLAYING' || isPaused) return;
+
+    let elapsed = now - startTime;
+    pausedTime = elapsed;
+
+    progress = elapsed / totalTime;
+    if (progress >= 1) {
+        progress = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(scaledImageCanvas, 0, 0);
+        endRound();
+        return;
+    }
+
+    updateProgressBar(progress);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawEffect(progress);
+
+    animationFrame = requestAnimationFrame(animate);
+}
+
+function initEffect() {
+    const effect = effects[currentEffectIndex];
+    if (effect === 'puzzle') initPuzzle();
+    else if (effect === 'cover') initCover();
+}
+
+function drawEffect(p) {
+    const effect = effects[currentEffectIndex];
+
+    if (p >= 1) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(scaledImageCanvas, 0, 0);
+        return;
+    }
+
+    if (effect === 'pixel') drawPixel(p);
+    else if (effect === 'cover') drawCover(p);
+    else if (effect === 'puzzle') drawPuzzle(p);
+    else if (effect === 'swirl') drawSwirl(p);
+}
+
+function drawPixel(p) {
+    const factor = 1 - p;
+    if (factor <= 0.01) {
+        ctx.drawImage(scaledImageCanvas, 0, 0);
+        return;
+    }
+
+    const maxPixelSize = 40;
+    const pixelSize = Math.max(1, Math.floor(factor * maxPixelSize));
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = Math.max(1, Math.ceil(w / pixelSize));
+    tempCanvas.height = Math.max(1, Math.ceil(h / pixelSize));
+    const tempCtx = tempCanvas.getContext('2d');
+
+    tempCtx.drawImage(scaledImageCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tempCanvas, 0, 0, tempCanvas.width, tempCanvas.height, 0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+}
+
+function initCover() {
+    coverBlocks = [];
+    const cols = 20;
+    const rows = 15;
+    const w = canvas.width / cols;
+    const h = canvas.height / rows;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            coverBlocks.push({ x: x * w, y: y * h, w: w, h: h, revealedAt: Math.random() });
+        }
+    }
+}
+
+function drawCover(p) {
+    ctx.drawImage(scaledImageCanvas, 0, 0);
+    ctx.fillStyle = '#000';
+    for (let b of coverBlocks) {
+        if (p < b.revealedAt) {
+            ctx.fillRect(Math.floor(b.x) - 1, Math.floor(b.y) - 1, Math.ceil(b.w) + 2, Math.ceil(b.h) + 2);
+        }
+    }
+}
+
+function initPuzzle() {
+    puzzlePieces = [];
+    const cols = 6;
+    const rows = 4;
+    const w = canvas.width / cols;
+    const h = canvas.height / rows;
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            puzzlePieces.push({
+                origX: x * w,
+                origY: y * h,
+                w: w,
+                h: h,
+                startX: (Math.random() - 0.2) * canvas.width,
+                startY: (Math.random() - 0.2) * canvas.height,
+                startAngle: (Math.random() - 0.5) * Math.PI * 2
+            });
+        }
+    }
+}
+
+function drawPuzzle(p) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const ease = 1 - Math.pow(1 - p, 3);
+    for (let b of puzzlePieces) {
+        const curX = b.startX + (b.origX - b.startX) * ease;
+        const curY = b.startY + (b.origY - b.startY) * ease;
+        const curAngle = b.startAngle * (1 - ease);
+
+        ctx.save();
+        ctx.translate(curX + b.w/2, curY + b.h/2);
+        ctx.rotate(curAngle);
+
+        ctx.drawImage(scaledImageCanvas, b.origX, b.origY, b.w, b.h, -b.w/2, -b.h/2, b.w, b.h);
+        ctx.restore();
+    }
+}
+
+function drawSwirl(p) {
+    const factor = Math.pow(1 - p, 2);
+    const maxAngle = Math.PI * 4 * factor;
+
+    if (maxAngle < 0.05) {
+        ctx.drawImage(scaledImageCanvas, 0, 0);
+        return;
+    }
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.max(w, h);
+    const ringWidth = 4;
+
+    for (let r = 0; r < radius; r += ringWidth) {
+        const amount = maxAngle * Math.pow(1 - r / radius, 1.5);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(amount);
+        ctx.translate(-cx, -cy);
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + ringWidth + 1.5, 0, Math.PI * 2);
+        if (r > 0) {
+            ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2, true);
+        }
+        ctx.clip();
+
+        ctx.drawImage(scaledImageCanvas, 0, 0);
+        ctx.restore();
+    }
+}
+</script>
+</body>
+</html>
